@@ -10,7 +10,7 @@
 
     <groupId>fr.soleil.lib.Lima.Camera</groupId>
     <artifactId>LimaImXpad-amd64-Linux-gcc-shared-${mode}</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
 
     <packaging>nar</packaging>
     <name>LimaImXpad</name>
