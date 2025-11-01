@@ -1,56 +1,57 @@
-###########################################################################
-# This file is part of LImA, a Library for Image Acquisition
-#
-#  Copyright (C) : 2009-2017
-#  European Synchrotron Radiation Facility
-#  CS40220 38043 Grenoble Cedex 9 
-#  FRANCE
-# 
-#  Contact: lima@esrf.fr
-# 
-#  This is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 3 of the License, or
-#  (at your option) any later version.
-# 
-#  This software is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-# 
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, see <http://www.gnu.org/licenses/>.
-############################################################################
-set(NAME "imxpad")
+# --------------------------------------------------------------------------
+# Dependencies
+# --------------------------------------------------------------------------
 
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--add-needed")
+find_package(yat CONFIG REQUIRED)
 
-set(${NAME}_srcs src/imXpadCamera.cpp  src/imXpadInterface.cpp
-	 src/imXpadDetInfoCtrlObj.cpp src/imXpadSyncCtrlObj.cpp
-	 src/imXpadClient.cpp)
+# --------------------------------------------------------------------------
+# Collect sources adnd includes
+# --------------------------------------------------------------------------
 
-if(LIMA_ENABLE_CONFIG)
-	list(APPEND ${NAME}_srcs src/imXpadConfig.cpp)
-endif()	
-	 
-add_library(lima${NAME} SHARED ${imxpad_srcs})
+file(GLOB_RECURSE sources src/*.cpp)
+list(FILTER sources EXCLUDE REGEX ".*/src/imXpadConfig.cpp$")
+set(includedirs
+	include/
+)
 
-#INCLUDES
-target_include_directories(lima${NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_include_directories(lima${NAME} PUBLIC "${CMAKE_SOURCE_DIR}/third-party/libconfig/lib")
+# --------------------------------------------------------------------------
+# Target
+# --------------------------------------------------------------------------
 
+add_library(limaimxpad ${sources})
+target_include_directories(limaimxpad 
+	PUBLIC 
+		${includedirs}
+)
+target_link_libraries(limaimxpad 
+	PUBLIC	
+		limacore
+        yat::yat
+)
 
-#LIBRARY
-target_link_libraries(lima${NAME} limacore)
+limatools_set_library_soversion(limaimxpad "VERSION")
 
-limatools_set_library_soversion(lima${NAME} "VERSION")
-install(TARGETS lima${NAME} LIBRARY DESTINATION lib)
+# --------------------------------------------------------------------------
+# Compile definitions
+# --------------------------------------------------------------------------
 
-if(LIMA_ENABLE_PYTHON)
-    limatools_run_sip_for_camera(${NAME})
-    install(FILES python/__init__.py DESTINATION "${PYTHON_SITE_PACKAGES_DIR}/Lima/ImXpad")
-endif()
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" IMXPAD_VERSION_RAW)
+string(STRIP "${IMXPAD_VERSION_RAW}" IMXPAD_VERSION)
 
-if(LIMA_ENABLE_TESTS)
-	add_subdirectory(test/)
-endif()
+target_compile_definitions(limaimxpad
+    PUBLIC
+        IMXPAD_NAME=ImXpad
+        IMXPAD_VERSION=${IMXPAD_VERSION}
+        IMXPAD_ENABLED
+)
+
+message(STATUS "Camera enabled: ImXpad ${IMXPAD_VERSION}")
+
+# --------------------------------------------------------------------------
+# Install
+# --------------------------------------------------------------------------
+
+install(
+    TARGETS limaimxpad 
+    LIBRARY DESTINATION lib
+)
